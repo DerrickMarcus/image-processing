@@ -2,5 +2,5 @@
 
 function P = myIDCT(C)
     [M, N] = size(C);
-    P = getD(M)' * C * getD(N);
+    P = getDmat(M)' * C * getDmat(N);
 end

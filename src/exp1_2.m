@@ -27,4 +27,4 @@ for i = 1:8
 end
 
 imshow(chessboard);
-imwrite(chessboard, '../report/exp1_2.jpg');
+imwrite(chessboard, '../report/fig1_2.jpg');

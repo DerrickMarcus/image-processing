@@ -26,4 +26,4 @@ for i = 1:height
 end
 
 imshow(img_with_circle);
-imwrite(img_with_circle, '../report/exp1_1.jpg');
+imwrite(img_with_circle, '../report/fig1_1.jpg');
