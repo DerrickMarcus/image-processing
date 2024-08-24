@@ -29,7 +29,7 @@ function ac_coeff = recACCoeff(ACstream, ACTAB, height, width)
             for j = 1:size(ACTAB, 1)
                 huff_len = ACTAB(j, 3);
 
-                if i + huff_len - 1 <= size(ACstream, 2) & isequal(ACstream(i:i + huff_len - 1), ACTAB(j, 4:huff_len + 3))
+                if i + huff_len - 1 <= size(ACstream, 2) && isequal(ACstream(i:i + huff_len - 1), ACTAB(j, 4:huff_len + 3))
                     Run = ACTAB(j, 1);
                     Size = ACTAB(j, 2);
                     cur_row = cur_row + Run;

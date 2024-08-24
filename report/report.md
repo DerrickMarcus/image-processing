@@ -315,11 +315,64 @@ disp(height * width * 8 / (length(DCstream) + length(ACstream)));
 
 （1）实现本章介绍的空域隐藏方法和提取方法。验证其抗 JPEG 编码能力。
 
+关键代码如下：
+
+```matlab
+[height, width] = size(hall_gray);
+info = randi([0, 1], height, width);
+hall_hide = bitset(hall_gray, 1, info);
+
+encode_res = encodeJPEG(hall_hide, QTAB, DCTAB, ACTAB);
+hall_recover = decodeJPEG(encode_res);
+
+info_abstract = double(bitand(hall_recover, 1));
+
+accuracy = sum(sum(info_abstract == info)) / (height * width);
+```
+
+经过多次运行后，发现提取出来的信息与原来信息对比，准确率只有 0.4950~0.5050，较低，可见其抗 JPEG 编码能力较差。
+
 
 
 （2）依次实现本章介绍的三种变换域信息隐藏方法和提取方法，分析嵌密方法的隐蔽性以及嵌密后 JPEG 图像的质量变化和压缩比变化。
 
+方法一：
 
+![fig3_2_1](.\fig3_2_1.png)
+
+可见失真较为严重。计算得到：PSNR = 12.756062，压缩比 = 3.164214。
+
+
+
+方法二：选取量化矩阵 QTAB 中较小元素的位置，在 DCT 系数矩阵的对应位置上进行信息隐藏。效果如下：
+
+![fig3_2_2](.\fig3_2_2.png)
+
+效果明显好于方法一，且与原图较为接近。计算得到：PSNR = 27.776433，压缩比 = 6.469574。
+
+
+
+方法三：对量化后的矩阵，在每一列中寻找最后一个非零系数即可，然后将 1 或 -1 的信息加载非零系数后（或最后一个数上）。效果如下：
+
+![fig3_2_3](.\fig3_2_3.png)
+
+效果与方法二接近，较好。计算得到：PSNR = 29.012804，压缩比 = 6.191646。
+
+将四张图放在一起对比：
+
+![fig3_2](.\fig3_2.png)
+
+计算结果如下：
+
+Method 1:
+PSNR: 12.751699
+compression ratio: 3.151416
+Method 2:
+PSNR: 27.776864
+compression ratio: 6.471131
+Method 3:
+PSNR: 28.892026
+compression ratio: 6.191646
 
 
 

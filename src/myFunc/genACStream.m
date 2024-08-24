@@ -15,7 +15,7 @@ function ACstream = genACStream(ac, ACTAB)
             else
                 zrl_num = floor(zero_num / 16);
                 Run = mod(zero_num, 16);
-                ACstream = [ACstream, repmat(ZRL, zrl_num), getACHuffman(Run, ac(j, i), ACTAB), getComplementCode(ac(j, i))];
+                ACstream = [ACstream, repmat(ZRL, 1, zrl_num), getACHuffman(Run, ac(j, i), ACTAB), getComplementCode(ac(j, i))];
                 zero_num = 0;
             end
 

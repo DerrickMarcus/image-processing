@@ -12,6 +12,8 @@ load('./jpegcodes.mat');
 
 hall_recover = decodeJPEG({DCstream, ACstream, height, width, QTAB, DCTAB, ACTAB});
 
+figure;
+
 subplot(1, 2, 1);
 imshow(hall_gray);
 title('Original Image');
