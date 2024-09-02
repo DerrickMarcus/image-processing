@@ -11,7 +11,7 @@ load('./resources/hall.mat');
 % test the whole picture
 [height, width] = size(hall_gray);
 N = min(height, width);
-test = double(hall_gray(N / 8:N * 7 / 8 , N / 8:N * 7 / 8));
+test = double(hall_gray(N / 8:N * 7/8, N / 8:N * 7/8));
 
 res1 = myDCT(test - 128);
 i_res1 = myIDCT(res1) + 128;

@@ -7,7 +7,9 @@ footer: ${pageNo} of ${totalPages}
 
 >姓名：陈彦旭
 >
->学号：2022010597 班级：无24
+>学号：2022010597
+>
+>班级：无24
 
 
 
@@ -380,17 +382,123 @@ compression ratio: 6.191646
 
 （1）所给资料 Faces 目录下包含从网图中截取的 28 张人脸，试以其作为样本训练人脸标准 $\text{v}$ 。
 
-​	（a）样本人脸大小不一，是否需要首先将图像调整为相同大小？
+（a）样本人脸大小不一，是否需要首先将图像调整为相同大小？
 
-​	（b）假设 $L$ 分别取 3,4,5，所得三个 $\text{v}$ 之间有何关系？
+答：不需要，因为我们只用关心每种颜色占整个图片像素的比例，与图片大小无关。
 
+（b）假设 $L$ 分别取 3,4,5，所得三个 $\text{v}$ 之间有何关系？
 
+先将 RGB 值对应到一个自然数，然后统计该数在所有数中出现的次数/频率。
+
+改变 L 取值的时候，得到：
+
+![fig4_1](.\fig4_1.png)
 
 
 
 （2）设计一种从任意大小的图片中检测任意多张人脸的算法并编程实现（输出图像在判定为人脸的位置加上红色的方框）。随意选取一张多人照片（比如支部活动或者足球比赛），对程序进行测试。尝试 $L$ 分别取不同的值，评价检测结果有何区别。
 
+算法思路：设定一个矩形方框，然后设置移动步长，让方框在整个图像中移动，区域满足条件即可判断为人脸。如果出现方框重叠的情况，那么合并为更大的方框。
 
+矩形方框的大小不宜过大或过小，过小可能只覆盖部分人脸，颜色特征与训练集使用整张人脸所得出的特征有差别，过大则会包含人脸之外的部分，对颜色特征产生干扰。同时举行移动的步长也需要考虑：步长过大可能在移动过程中无法出现较好框住人脸的位置，过小则程序运行效率低。
+
+最后对方框的形状进细微调整：如果矩形过于扁平，那么将形状调整为 4:3 或 3:4 ，同时区域面积不变，中心点不变。
+
+关键代码如下：
+
+```matlab
+% scan for face regions begin
+for i = 1:step_size(1):test_height - region_size(1) + 1
+
+    for j = 1:step_size(2):test_width - region_size(2) + 1
+
+        current_region = test_image(i:i + region_size(1) - 1, j:j + region_size(2) - 1, :);
+        current_density = getColorDensity(current_region, L);
+        distance = 1 - sum(sqrt(std_density .* current_density), 'all');
+
+        if distance < threshold
+            face_regions = [face_regions; i, j, i + region_size(1) - 1, j + region_size(2) - 1];
+        end
+
+    end
+
+end
+
+% scan for face regions end
+
+% merge face regions begin
+merged_regions = [];
+
+for i = 1:size(face_regions, 1)
+    current_box = face_regions(i, :);
+    overlap = false;
+
+    for j = 1:size(merged_regions, 1)
+        merged_box = merged_regions(j, :);
+
+        if ~((current_box(3) < merged_box(1)) || ...
+                (current_box(4) < merged_box(2)) || ...
+                (current_box(1) > merged_box(3)) || ...
+                (current_box(2) > merged_box(4)))
+
+            merged_box(1) = min(merged_box(1), current_box(1));
+            merged_box(2) = min(merged_box(2), current_box(2));
+            merged_box(3) = max(merged_box(3), current_box(3));
+            merged_box(4) = max(merged_box(4), current_box(4));
+            merged_regions(j, :) = merged_box;
+            overlap = true;
+            break;
+        end
+
+    end
+
+    if ~overlap
+        merged_regions = [merged_regions; current_box];
+    end
+
+end
+
+% merge face regions end
+
+% adjust regions shape begin
+for i = 1:size(merged_regions, 1)
+    dx = merged_regions(i, 3) - merged_regions(i, 1);
+    dy = merged_regions(i, 4) - merged_regions(i, 2);
+
+    if dx / dy > 4/3
+        new_dx = 4 * round(sqrt(dx * dy / 12));
+        new_dy = 3 * round(sqrt(dx * dy / 12));
+        merged_regions(i, 1) = merged_regions(i, 1) + (dx - new_dx) / 2;
+        merged_regions(i, 3) = merged_regions(i, 3) - (dx - new_dx) / 2;
+        merged_regions(i, 2) = max(1, merged_regions(i, 2) - (new_dy - dy) / 2);
+        merged_regions(i, 4) = min(test_width, merged_regions(i, 4) + (new_dy - dy) / 2);
+    elseif dy / dx > 4/3
+        new_dx = 3 * round(sqrt(dx * dy / 12));
+        new_dy = 4 * round(sqrt(dx * dy / 12));
+        merged_regions(i, 1) = max(1, merged_regions(i, 1) - (new_dx - dx) / 2);
+        merged_regions(i, 3) = min(test_height, merged_regions(i, 3) + (new_dx - dx) / 2);
+        merged_regions(i, 2) = merged_regions(i, 2) + (dy - new_dy) / 2;
+        merged_regions(i, 4) = merged_regions(i, 4) - (dy - new_dy) / 2;
+    end
+
+end
+
+% adjust regions shape end
+```
+
+最后的识别结果如下：
+
+L=3，阈值设为 0.3 ，源代码见 `exp4_2_1.m` 。
+
+![fig4_2_1](.\fig4_2_1.png)
+
+L=4，阈值设为 0.45 ，源代码见 `exp4_2_2.m` 。
+
+![fig4_2_2](.\fig4_2_2.png)
+
+L=5，域值设为 0.55 ，源代码见 `exp4_2_3.m` 。
+
+![fig4_2_3](.\fig4_2_3.png)
 
 
 
@@ -404,8 +512,40 @@ compression ratio: 6.191646
 
 再试试你的算法检测结果如何？并分析所得结果。
 
+顺时针旋转 90 度，源代码见 `exp4_3_a.m` 。
+
+![fig4_3_a](.\fig4_3_a.png)
+
+与原本效果并不相同，旋转并没有改变图像本身的信息，理论上初步扫描过后识别到人脸的方框位置应当相同，但是由于第二部还需要合并方框时产生了不同。
+
+高度不变，宽度拉伸，源代码见 `exp4_3_b.m` 。
+
+![fig4_3_b](.\fig4_3_b.png)
+
+与原图像不同的是，拉伸之后出现了漏掉人脸的情况，猜测可能是拉伸之后颜色变化更平缓，区域面积更大，因此原本的识别方框难以包含足够丰富的人脸颜色信息，因此出现遗漏情况。
+
+适当改变颜色，源代码见 `exp4_3_c.m` 。
+
+![fig4_3_c](.\fig4_3_c.png)
+
+与上一种情况又不相同，改变颜色之后，出现了错误识别的情况，将一部分手也识别成了人脸，并且人脸爱的较近的时候出现同时识别的情况。
+
+
+
+在写这个程序时我曾遇到了“匪夷所思”的问题：在仅仅添加 `test_image = imresize(test_image, ...)` 这句话之后，在扫描图中区域计算颜色密度的时候，竟然出现了 `density` 数组越界的问题，按理来说应该是不可能的，因为数组大小也就是颜色数量是由 L 决定的，和 RGB 满足映射关系。后来我通过打印 `max(), min()` 之后发现图像的 RGB 数值竟然出现了超过 255 和小于 0 的数。我查阅资料发现原因是：执行 `imresize()` 函数的时候，操作的对象已经使用 `double()` 函数转换类型了，此时 `imresize()` 进行插值可能会出现超出范围的情况。因此应先对整数类型数组进行操作，然后进行扫描时再转换成 double 类型。
+
+![debug](.\debug.png)
+
 
 
 
 
 （4）如果可以重新选择人脸样本训练标准，你觉得应该如何选取？
+
+我认为应该增加样本集的数量和多样性，比如我们本次使用的图片集只有 33 个，数量上太少，不具有多样性；并且以白种人为主，没有一个黑种人，白种人和黄种人在多数情况下颜色较为接近，可以使用同一套标准特征，而黑种人可能需要单独使用同一套；同时应当增加人脸在各种场景下的情况，比如各种情绪情感或光照角度等对人脸颜色产生的影响、肢体动作和表情对人脸形状产生的影响。此外还需排除其他身体部位或其他物体对人脸识别的干扰，比如手部颜色较为接近，脖子部分颜色也会使识别区域比实际人脸位置靠下。
+
+
+
+## 总结
+
+第二次大作业的难度和挑战性明显高于我第一个写的音乐合成，图像处理也包含了诸多方面，比如基础的图像操作、JPEG 图像编码和解码以及最后的人脸识别，由浅入深，收获较多。对于较多有重叠部分的问题，我将许多功能封装为函数，便于复用也使得代码更加简洁。MATLAB 丰富的内置函数和矩阵运算让感受到它在科学计算和建模分析方面的强大功能。同时，我从打印变量到设置断点，尝试了多种 debug 的方法，也对我的编程能力有一定提升。最后感谢谷老师和助教们的辛苦付出！
