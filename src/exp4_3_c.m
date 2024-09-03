@@ -51,10 +51,12 @@ end
 % scan for face regions end
 
 % merge face regions begin
+% 此部分参考ai语言模型，调整后写出算法
 merged_regions = [];
 
-for i = 1:size(face_regions, 1)
-    current_box = face_regions(i, :);
+while ~isempty(face_regions)
+    current_box = face_regions(1, :);
+    face_regions(1, :) = [];
     overlap = false;
 
     for j = 1:size(merged_regions, 1)
@@ -78,6 +80,36 @@ for i = 1:size(face_regions, 1)
 
     if ~overlap
         merged_regions = [merged_regions; current_box];
+    else
+        i = 1;
+
+        while i <= size(merged_regions, 1)
+            j = i + 1;
+
+            while j <= size(merged_regions, 1)
+                box1 = merged_regions(i, :);
+                box2 = merged_regions(j, :);
+
+                if ~((box1(3) < box2(1)) || ...
+                        (box1(4) < box2(2)) || ...
+                        (box1(1) > box2(3)) || ...
+                        (box1(2) > box2(4)))
+
+                    merged_box(1) = min(box1(1), box2(1));
+                    merged_box(2) = min(box1(2), box2(2));
+                    merged_box(3) = max(box1(3), box2(3));
+                    merged_box(4) = max(box1(4), box2(4));
+                    merged_regions(i, :) = merged_box;
+                    merged_regions(j, :) = [];
+                else
+                    j = j + 1;
+                end
+
+            end
+
+            i = i + 1;
+        end
+
     end
 
 end

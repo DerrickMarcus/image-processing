@@ -30,6 +30,7 @@ end
 % hide information begin
 info = randi([0, 1], size(encode));
 encode_hide = double(bitset(uint8(encode), 1, info));
+% 此处bitset函数参考一部分版本和ai
 % hide information end
 
 DCstream = genDCStream(encode_hide(1, :), DCTAB);
